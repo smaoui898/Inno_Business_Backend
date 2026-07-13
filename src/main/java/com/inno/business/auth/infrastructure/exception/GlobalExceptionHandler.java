@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.inno.business.auth.domain.exception.InvalidCredentialsException;
 import com.inno.business.auth.domain.exception.PasswordMismatchException;
 import com.inno.business.auth.domain.exception.UserAlreadyExistsException;
+import com.inno.business.management.companie.domain.exception.SocieteNotFoundException;
+import com.inno.business.management.companie.domain.exception.UnauthorizedAccessException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -42,4 +44,15 @@ public class GlobalExceptionHandler {
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of("error", message));
     }
+
+
+@ExceptionHandler(SocieteNotFoundException.class)
+public ResponseEntity<Map<String, String>> handleSocieteNotFound(SocieteNotFoundException e) {
+    return error(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(UnauthorizedAccessException.class)
+public ResponseEntity<Map<String, String>> handleUnauthorized(UnauthorizedAccessException e) {
+    return error(HttpStatus.FORBIDDEN, e.getMessage());
+}
 }

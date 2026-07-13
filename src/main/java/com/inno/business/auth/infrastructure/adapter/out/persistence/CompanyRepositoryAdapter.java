@@ -15,9 +15,9 @@ public class CompanyRepositoryAdapter implements CompanyRepositoryPort {
     private final SpringUserRepository    userRepo;
 
     public CompanyRepositoryAdapter(SpringCompanyRepository companyRepo,
-                                    SpringUserRepository userRepo) {
+            SpringUserRepository userRepo) {
         this.companyRepo = companyRepo;
-        this.userRepo    = userRepo;
+        this.userRepo = userRepo;
     }
 
     @Override

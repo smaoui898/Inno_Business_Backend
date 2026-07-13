@@ -25,7 +25,10 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserJpaEntity implements UserDetails {
 
     @Id
@@ -49,6 +52,9 @@ public class UserJpaEntity implements UserDetails {
 
     @Column(nullable = false)
     private String role;
+    // pour les managers créés par un group owner
+    @Column(name = "created_by_user_id")
+    private UUID createdByUserId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -58,13 +64,14 @@ public class UserJpaEntity implements UserDetails {
 
     public static UserJpaEntity fromDomain(User u) {
         UserJpaEntity e = new UserJpaEntity();
-        e.id        = u.getId();
-        e.prenom    = u.getPrenom();
-        e.nom       = u.getNom();
+        e.id = u.getId();
+        e.prenom = u.getPrenom();
+        e.nom = u.getNom();
         e.telephone = u.getTelephone();
-        e.email     = u.getEmailValue();
-        e.password  = u.getPassword();
-        e.role      = u.getRole();
+        e.email = u.getEmailValue();
+        e.password = u.getPassword();
+        e.role = u.getRole();
+        e.createdByUserId = u.getCreatedByUserId();
         e.createdAt = u.getCreatedAt();
         e.lastLogin = u.getLastLogin();
         return e;
@@ -75,7 +82,7 @@ public class UserJpaEntity implements UserDetails {
                 id, prenom, nom, telephone,
                 new Email(email),
                 password, role,
-                createdAt, lastLogin
+                createdAt, createdByUserId
         );
     }
 
@@ -84,9 +91,28 @@ public class UserJpaEntity implements UserDetails {
         return List.of(new SimpleGrantedAuthority(role));
     }
 
-    @Override public String  getUsername()             { return email; }
-    @Override public boolean isAccountNonExpired()     { return true; }
-    @Override public boolean isAccountNonLocked()      { return true; }
-    @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled()               { return true; }
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

@@ -1,6 +1,7 @@
 package com.inno.business.auth.infrastructure.adapter.out.persistence;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
@@ -14,7 +15,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort { //le vrai ada
     public UserRepositoryAdapter(SpringUserRepository springUserRepository) {
         this.springUserRepository = springUserRepository;
     }
-
+    // trouver un user par son id pour un beneficiaire
+    @Override
+    public Optional<User> findById(UUID id) {        
+        return springUserRepository.findById(id).map(UserJpaEntity::toDomain);
+    }
     @Override
     public Optional<User> findByEmail(String email) {
         return springUserRepository.findByEmail(email).map(UserJpaEntity::toDomain);

@@ -1,7 +1,6 @@
 package com.inno.business.auth.application;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import com.inno.business.auth.domain.exception.PasswordMismatchException;
 import com.inno.business.auth.domain.exception.UserAlreadyExistsException;
@@ -23,30 +22,32 @@ public class RegisterUseCaseImpl implements RegisterUseCase {
     private final FileStoragePort fileStorage;
 
     public RegisterUseCaseImpl(UserRepositoryPort userRepository,
-                                CompanyRepositoryPort companyRepository,
-                                PasswordEncoderPort passwordEncoder,
-                                FileStoragePort fileStorage) {
-        this.userRepository  = userRepository;
+            CompanyRepositoryPort companyRepository,
+            PasswordEncoderPort passwordEncoder,
+            FileStoragePort fileStorage) {
+        this.userRepository = userRepository;
         this.companyRepository = companyRepository;
         this.passwordEncoder = passwordEncoder;
-        this.fileStorage     = fileStorage;
+        this.fileStorage = fileStorage;
     }
 
     @Override
     public RegisterResult execute(RegisterCommand cmd) {
 
         // 1. Vérification des mots de passe  //verif mdp
-        if (!cmd.password().equals(cmd.confirmPassword()))
+        if (!cmd.password().equals(cmd.confirmPassword())) {
             throw new PasswordMismatchException();
+        }
 
         // 2. Vérification unicité email
-        if (userRepository.existsByEmail(cmd.email()))
+        if (userRepository.existsByEmail(cmd.email())) {
             throw new UserAlreadyExistsException(cmd.email());
+        }
 
         // 3. Stockage des documents
-        String rnePath       = fileStorage.store(cmd.rneData(),cmd.rneFileName(),"rne");
-        String patentePath   = fileStorage.store(cmd.patenteData(),cmd.patenteFileName(),"patente");
-        String cinGerantPath = fileStorage.store(cmd.cinGerantData(),cmd.cinGerantFileName(),"cin");
+        String rnePath = fileStorage.store(cmd.rneData(), cmd.rneFileName(), "rne");
+        String patentePath = fileStorage.store(cmd.patenteData(), cmd.patenteFileName(), "patente");
+        String cinGerantPath = fileStorage.store(cmd.cinGerantData(), cmd.cinGerantFileName(), "cin");
 
         // 5. Création de l'utilisateur domaine
         User user = new User(
@@ -64,7 +65,7 @@ public class RegisterUseCaseImpl implements RegisterUseCase {
 
         Company company = new Company(
                 null,
-                savedUser.getId(),                         // FK vers users
+                savedUser.getId(), // FK vers users
                 TypeSociete.fromString(cmd.typeSociete()),
                 cmd.nomGroupe(),
                 cmd.raisonSociale(),
@@ -76,7 +77,7 @@ public class RegisterUseCaseImpl implements RegisterUseCase {
                 rnePath,
                 patentePath,
                 cinGerantPath,
-                LocalDateTime.now()
+                LocalDateTime.now(), false, null, null
         );
         companyRepository.save(company);
         return new RegisterResult("Compte créé avec succès", user.getEmailValue()); //resultat

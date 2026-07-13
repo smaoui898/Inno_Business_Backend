@@ -14,10 +14,11 @@ public class User {
     private final Email email;
     private final String password;
     private final String role;
+    private final UUID createdByUserId;
     private final LocalDateTime createdAt;
     private LocalDateTime lastLogin;
 
-    public User(UUID id, String prenom, String nom, String telephone, Email email, String password, String role, LocalDateTime createdAt, LocalDateTime lastLogin) {
+    public User(UUID id, String prenom, String nom, String telephone, Email email, String password, String role, LocalDateTime createdAt, UUID createdByUserId) {
 
         if (prenom == null || prenom.isBlank()) {
             throw new IllegalArgumentException("Le prénom est obligatoire");
@@ -39,6 +40,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.createdByUserId = createdByUserId;
         this.createdAt = createdAt;
         this.lastLogin = lastLogin;
     }
@@ -69,6 +71,10 @@ public class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public UUID getCreatedByUserId() {
+        return createdByUserId;
     }
 
     public String getRole() {
