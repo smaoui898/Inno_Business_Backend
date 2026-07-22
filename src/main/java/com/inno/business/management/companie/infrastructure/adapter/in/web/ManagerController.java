@@ -20,6 +20,7 @@ import com.inno.business.auth.domain.model.User;
 import com.inno.business.auth.domain.port.out.UserRepositoryPort;
 import com.inno.business.management.companie.domain.ports.in.AssignManagerUseCase;
 import com.inno.business.management.companie.domain.ports.in.CreateManagerUseCase;
+import com.inno.business.management.companie.domain.ports.in.DeleteManagerUseCase;
 import com.inno.business.management.companie.domain.ports.in.UpdateManagerUseCase;
 import com.inno.business.management.companie.domain.ports.out.ManagerRepositoryPort;
 import com.inno.business.management.companie.infrastructure.adapter.in.web.dto.CreateManagerRequestDto;
@@ -42,17 +43,21 @@ public class ManagerController {
     private final UserRepositoryPort userRepository;
     private final UpdateManagerUseCase updateManagerUseCase;
     private final AssignManagerUseCase assignManagerUseCase;
+    private final DeleteManagerUseCase deleteManagerUseCase;
+
 
     public ManagerController(CreateManagerUseCase createManagerUseCase, 
                              ManagerRepositoryPort managerRepository, 
                              UserRepositoryPort userRepository, 
                              UpdateManagerUseCase updateManagerUseCase,
-                             AssignManagerUseCase assignManagerUseCase) {
+                             AssignManagerUseCase assignManagerUseCase,
+                             DeleteManagerUseCase deleteManagerUseCase) {
         this.createManagerUseCase = createManagerUseCase;
         this.managerRepository = managerRepository;
         this.userRepository = userRepository;
         this.updateManagerUseCase = updateManagerUseCase;
         this.assignManagerUseCase = assignManagerUseCase;
+        this.deleteManagerUseCase = deleteManagerUseCase;
     }
 
     // POST créer un manager 
@@ -143,27 +148,16 @@ public class ManagerController {
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE supprimer définitivement un manager
+
     @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer un manager",
-            description = "Supprime définitivement un manager créé par cet owner")
-    public ResponseEntity<Void> deleteManager(
-            @AuthenticationPrincipal UserDetails user,
-            @PathVariable UUID id) {
+@Operation(summary = "Supprimer un manager",
+           description = "Désassigne toutes ses sociétés puis supprime le compte")
+public ResponseEntity<Void> delete(
+        @AuthenticationPrincipal UserDetails user,
+        @PathVariable UUID id) {
 
-        User owner = userRepository.findByEmail(user.getUsername())
-                .orElseThrow(() -> new RuntimeException("Owner non trouvé"));
-
-        User manager = managerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Manager non trouvé"));
-
-        // Vérification : le manager doit avoir été créé par cet owner
-        if (!owner.getId().equals(manager.getCreatedByUserId())) {
-            return ResponseEntity.status(403).build();
-        }
-
-        managerRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
-    }
+    deleteManagerUseCase.execute(user.getUsername(), id);
+    return ResponseEntity.noContent().build();
+}
 }
 

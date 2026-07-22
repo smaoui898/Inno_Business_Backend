@@ -18,9 +18,16 @@ public class GetSocietesUseCaseImpl implements GetSocietesUseCase {
     }
 
    @Override
-    public List<Societe> execute(String ownerEmail) {
-        User owner = userRepository.findByEmail(ownerEmail)
+    public List<Societe> execute(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-        return societeRepository.findAllByOwnerId(owner.getId());
-}
+
+        // ROLE_MANAGER → ne voit que les sociétés qui lui sont assignées
+        if ("ROLE_MANAGER".equals(user.getRole())) {
+            return societeRepository.findAllByManagerId(user.getId());
+        }
+
+        // ROLE_USER (owner) → voit toutes ses sociétés
+        return societeRepository.findAllByOwnerId(user.getId());
+    }
 }

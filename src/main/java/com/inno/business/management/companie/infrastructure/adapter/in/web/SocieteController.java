@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @CrossOrigin(origins = "*")
 @Tag(name = "Sociétés", description = "Gestion des sociétés du groupe")
 @SecurityRequirement(name = "bearerAuth")
+
 public class SocieteController {
 
     private final GetSocietesUseCase    getSocietesUseCase;
@@ -154,6 +155,24 @@ public class SocieteController {
 
         return ResponseEntity.ok().build();
     }
+    //delete manager cad désassigner le manager 
+
+@DeleteMapping("/{id}/manager")
+@Operation(summary = "Retirer le manager d'une société",
+           description = "Désassigne le manager sans le supprimer")
+public ResponseEntity<Void> removeManager(
+        @AuthenticationPrincipal UserDetails user,
+        @PathVariable UUID id) {
+
+    assignManagerUseCase.execute(
+            new AssignManagerUseCase.AssignManagerCommand(
+                    user.getUsername(),
+                    id,
+                    null    
+            )
+    );
+    return ResponseEntity.noContent().build();
+}
 
     //Mapper 
     private SocieteResponseDto toDto(Societe s) {
