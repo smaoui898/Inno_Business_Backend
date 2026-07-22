@@ -29,6 +29,7 @@ public class CreateManagerUseCaseImpl implements CreateManagerUseCase {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public CreateManagerResult execute(CreateManagerCommand cmd) {
         // 1. Vérifier que l'owner existe et appartient à la société
         User owner = userRepository.findByEmail(cmd.ownerEmail())
@@ -40,7 +41,7 @@ public class CreateManagerUseCaseImpl implements CreateManagerUseCase {
 
         // 2. Créer le manager
         User manager = new User(
-                UUID.randomUUID(),
+                null, // null → @GeneratedValue génère l'UUID via persist()
                 cmd.prenom(),
                 cmd.nom(),
                 cmd.telephone(),

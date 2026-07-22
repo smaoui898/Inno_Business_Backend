@@ -4,3 +4,4 @@ public enum StatutBeneficiaire {
     ACTIF,
     INACTIF
 }
+

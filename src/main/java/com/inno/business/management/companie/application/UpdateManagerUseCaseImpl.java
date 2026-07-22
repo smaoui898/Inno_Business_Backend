@@ -29,7 +29,7 @@ public class UpdateManagerUseCaseImpl implements UpdateManagerUseCase {
     @Override
     public UpdateManagerResult execute(UpdateManagerCommand cmd) {
 
-        // ── 1. Vérifications ─────────────────────────────────────────
+        // 1. Vérifications 
         User owner = userRepository.findByEmail(cmd.ownerEmail())
                 .orElseThrow(() -> new RuntimeException("Owner non trouvé"));
 
@@ -42,7 +42,7 @@ public class UpdateManagerUseCaseImpl implements UpdateManagerUseCase {
             !owner.getId().equals(manager.getCreatedByUserId()))
             throw new UnauthorizedAccessException();
 
-        // ── 2. Mise à jour des infos personnelles ─────────────────────
+        // 2. Mise à jour des infos personnelles 
         User updatedManager = new User(
                 manager.getId(),
                 cmd.prenom()    != null ? cmd.prenom()    : manager.getPrenom(),
@@ -56,7 +56,7 @@ public class UpdateManagerUseCaseImpl implements UpdateManagerUseCase {
         );
         managerRepository.updateManager(updatedManager);
 
-        // ── 3. Réassignation des sociétés ────────────────────────────
+        // 3. Réassignation des sociétés
         List<Societe> actuelles = societeRepository.findAllByManagerId(cmd.managerId());
 
         // Désassigner les sociétés qui ne sont plus dans la liste

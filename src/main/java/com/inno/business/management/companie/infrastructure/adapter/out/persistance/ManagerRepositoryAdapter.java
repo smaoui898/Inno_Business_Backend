@@ -6,9 +6,9 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.inno.business.auth.domain.model.User;
 import com.inno.business.auth.infrastructure.adapter.out.persistence.SpringUserRepository;
 import com.inno.business.auth.infrastructure.adapter.out.persistence.UserJpaEntity;
-import com.inno.business.auth.domain.model.User;
 import com.inno.business.management.companie.domain.ports.out.ManagerRepositoryPort;
 
 @Component
@@ -20,42 +20,16 @@ public class ManagerRepositoryAdapter implements ManagerRepositoryPort {
         this.userRepo = userRepo;
     }
 
+    // ── Créer ou mettre à jour un manager ────────────────────────────
+    // Spring Data JPA fait INSERT si l'id n'existe pas, UPDATE sinon
     @Override
     public User createManager(User manager) {
-        // On NE SET PAS l'ID pour que @GeneratedValue génère un nouvel UUID
-        // Si on passe l'ID, Hibernate fait un UPDATE au lieu d'un INSERT
-        UserJpaEntity entity = new UserJpaEntity();
-        entity.setPrenom(manager.getPrenom());
-        entity.setNom(manager.getNom());
-        entity.setTelephone(manager.getTelephone());
-        entity.setEmail(manager.getEmailValue());
-        entity.setPassword(manager.getPassword());
-        entity.setRole(manager.getRole());
-        entity.setCreatedByUserId(manager.getCreatedByUserId());
-        entity.setCreatedAt(manager.getCreatedAt());
+        UserJpaEntity entity = UserJpaEntity.fromDomain(manager);
         return userRepo.save(entity).toDomain();
     }
 
+    // ── Tous les managers créés par un owner 
     @Override
-    public User updateManager(User manager) {
-        // On charge l'entité existante et on met à jour ses champs
-        // Hibernate fait automatiquement un UPDATE (pas d'INSERT)
-        UserJpaEntity entity = userRepo.findById(manager.getId())
-                .orElseThrow(() -> new RuntimeException("Manager non trouvé : " + manager.getId()));
-        entity.setPrenom(manager.getPrenom());
-        entity.setNom(manager.getNom());
-        entity.setTelephone(manager.getTelephone());
-        // Email non modifiable — on ne touche pas à entity.email
-        return userRepo.save(entity).toDomain();
-    }
-
-    @Override
-    public void deleteById(UUID id) {
-        userRepo.deleteById(id);
-    }
-
-    @Override
-    // find all managers created by user with user id
     public List<User> findAllByCreatedBy(UUID createdByUserId) {
         return userRepo.findAllByCreatedByUserId(createdByUserId)
                 .stream()
@@ -63,13 +37,32 @@ public class ManagerRepositoryAdapter implements ManagerRepositoryPort {
                 .toList();
     }
 
+    // ── Trouver un manager par son id 
     @Override
     public Optional<User> findById(UUID id) {
-        return userRepo.findById(id).map(UserJpaEntity::toDomain);
+        return userRepo.findById(id)
+                .map(UserJpaEntity::toDomain);
     }
 
+    // ── Vérifier si un email est déjà utilisé 
     @Override
     public boolean existsByEmail(String email) {
         return userRepo.existsByEmail(email);
+    }
+
+    // ── Supprimer un manager 
+    @Override
+    public void deleteManager(UUID managerId) {
+        userRepo.deleteById(managerId);
+    }
+
+    @Override
+    public User updateManager(User manager) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
