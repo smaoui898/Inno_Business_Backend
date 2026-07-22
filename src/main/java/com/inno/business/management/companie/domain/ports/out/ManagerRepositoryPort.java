@@ -9,8 +9,10 @@ import com.inno.business.auth.domain.model.User;
 public interface ManagerRepositoryPort {
     User              createManager(User manager);    // INSERT (sans ID)
     User              updateManager(User manager);    // UPDATE (avec ID)
-    List<User>        findAllByCreatedBy(UUID createdByUserId);
-    Optional<User>    findById(UUID id);
+    List<User>        findAllByCreatedBy(UUID createdByUserId); // trouver tous les managers d'une societe
+    Optional<User>    findById(UUID id); //
     boolean           existsByEmail(String email);
-    void              deleteById(UUID id);
+    void              deleteById(UUID id); //delete (deassignation) //hériter JpaRepository  pas besoin de déclarer dans l'adapter
+    void              deleteManager(UUID managerId);  // delete 
 }
+

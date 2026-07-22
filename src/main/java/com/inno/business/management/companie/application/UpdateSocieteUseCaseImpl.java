@@ -10,28 +10,36 @@ import com.inno.business.management.companie.domain.ports.out.SocieteRepositoryP
 
 public class UpdateSocieteUseCaseImpl implements UpdateSocieteUseCase {
 
-    private final UserRepositoryPort    userRepository;
+    private final UserRepositoryPort userRepository;
     private final SocieteRepositoryPort societeRepository;
 
     public UpdateSocieteUseCaseImpl(UserRepositoryPort userRepository,
-                                    SocieteRepositoryPort societeRepository) {
-        this.userRepository    = userRepository;
+            SocieteRepositoryPort societeRepository) {
+        this.userRepository = userRepository;
         this.societeRepository = societeRepository;
     }
-
 
     @Override
     public Societe execute(UpdateSocieteCommand cmd) {
         // 1. Récupération de l'owner via son email
-        User owner = userRepository.findByEmail(cmd.ownerEmail())
+        User user = userRepository.findByEmail(cmd.ownerEmail())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        // 2. Vérification que la société appartient à cet owner
-        if (!societeRepository.existsByIdAndOwnerId(cmd.societeId(), owner.getId()))
-            throw new UnauthorizedAccessException();
-
+        // Vérification d'accès selon le rôle
         Societe existing = societeRepository.findById(cmd.societeId())
                 .orElseThrow(() -> new SocieteNotFoundException(cmd.societeId().toString()));
+
+        if ("ROLE_MANAGER".equals(user.getRole())) {
+            // Manager : peut modifier seulement ses sociétés assignées
+            if (!user.getId().equals(existing.getManagerId())) {
+                throw new UnauthorizedAccessException();
+            }
+        } else {
+            // Owner : peut modifier seulement ses propres sociétés
+            if (!societeRepository.existsByIdAndOwnerId(cmd.societeId(), user.getId())) {
+                throw new UnauthorizedAccessException();
+            }
+        }
 
         // Création d'une nouvelle instance avec les champs mis à jour
         Societe updated = new Societe(
