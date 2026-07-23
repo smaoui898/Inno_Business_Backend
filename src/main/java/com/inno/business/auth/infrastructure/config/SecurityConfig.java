@@ -45,7 +45,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        "/api/auth/**",
+                        "/api/auth/login",  // public : not connected yet
+                        "/api/auth/register",  //public
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs",
@@ -54,7 +55,7 @@ public class SecurityConfig {
                         "/swagger-resources/**",
                         "/webjars/**"
                 ).permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // ← /api/auth/me : authentification requise
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider()) //dÃ©sactive les sessions

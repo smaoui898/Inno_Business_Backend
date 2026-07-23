@@ -3,8 +3,10 @@ package com.inno.business.auth.infrastructure.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.inno.business.auth.application.GetCurrentUserUseCaseImpl;
 import com.inno.business.auth.application.LoginUseCaseImpl;
 import com.inno.business.auth.application.RegisterUseCaseImpl;
+import com.inno.business.auth.domain.port.in.GetCurrentUserUseCase;
 import com.inno.business.auth.domain.port.in.LoginUseCase;
 import com.inno.business.auth.domain.port.in.RegisterUseCase;
 import com.inno.business.auth.domain.port.out.CompanyRepositoryPort;
@@ -90,5 +92,10 @@ public class BeanConfig {
             ManagerRepositoryPort managerRepository,
             SocieteRepositoryPort societeRepository) {
         return new UpdateManagerUseCaseImpl(userRepository, managerRepository, societeRepository);
+    }
+
+    @Bean
+    public GetCurrentUserUseCase getCurrentUserUseCase(UserRepositoryPort userRepository) {
+        return new GetCurrentUserUseCaseImpl(userRepository);
     }
 }

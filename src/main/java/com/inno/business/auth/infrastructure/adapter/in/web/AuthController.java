@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,13 +14,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import com.inno.business.auth.domain.port.in.GetCurrentUserUseCase;
 import com.inno.business.auth.domain.port.in.LoginUseCase;
 import com.inno.business.auth.domain.port.in.RegisterUseCase;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.AuthResponseDto;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.LoginRequestDto;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.RegisterResponseDto;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.UserInfoDto;
+import com.inno.business.auth.domain.model.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +38,7 @@ public class AuthController {
 
     private final LoginUseCase loginUseCase;
     private final RegisterUseCase registerUseCase;
+    private final GetCurrentUserUseCase getCurrentUserUseCase;
     private ResponseCookie buildAccessCookie(String token) {
     return ResponseCookie.from("access_token", token)
             .httpOnly(true)              // invisible au JavaScript → anti-XSS
@@ -46,9 +52,10 @@ public class AuthController {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
-    public AuthController(LoginUseCase loginUseCase, RegisterUseCase registerUseCase) {
+    public AuthController(LoginUseCase loginUseCase, RegisterUseCase registerUseCase, GetCurrentUserUseCase getCurrentUserUseCase) {
         this.loginUseCase = loginUseCase;
         this.registerUseCase = registerUseCase;
+        this.getCurrentUserUseCase = getCurrentUserUseCase;
     }
 
     @PostMapping("/login")
@@ -116,6 +123,15 @@ public class AuthController {
 
         return ResponseEntity.status(201)
                 .body(new RegisterResponseDto(result.message(), result.email()));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Profil courant", description = "Retourne l'utilisateur authentifié")
+        public ResponseEntity<UserInfoDto> me(@AuthenticationPrincipal UserDetails principal) {
+        // si on arrive ici, le filtre a validé le cookie/token → principal est renseigné
+            User user = getCurrentUserUseCase.execute(principal.getUsername());  // getUsername() = email
+            return ResponseEntity.ok(new UserInfoDto(
+                user.getEmailValue(), user.getRole(), user.getPrenom(), user.getNom()));
     }
 
 }
