@@ -2,10 +2,12 @@ package com.inno.business.auth.infrastructure.adapter.in.web;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,18 +18,33 @@ import com.inno.business.auth.domain.port.in.RegisterUseCase;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.AuthResponseDto;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.LoginRequestDto;
 import com.inno.business.auth.infrastructure.adapter.in.web.dto.RegisterResponseDto;
+import com.inno.business.auth.infrastructure.adapter.in.web.dto.UserInfoDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import jakarta.servlet.http.HttpServletResponse;
+
 
 @RestController  //endpoints
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 @Tag(name = "Authentification", description = "Login et gestion des tokens") //annotation de swagger pour la documentation
 public class AuthController {
 
     private final LoginUseCase loginUseCase;
     private final RegisterUseCase registerUseCase;
+    private ResponseCookie buildAccessCookie(String token) {
+    return ResponseCookie.from("access_token", token)
+            .httpOnly(true)              // invisible au JavaScript → anti-XSS
+            .secure(false)               // false en DEV (http localhost) ; TRUE en PROD (https)
+            .sameSite("Strict")          // le cookie n'est PAS envoyé par un autre site → anti-CSRF
+            .path("/")                   // envoyé sur toutes les routes
+            .maxAge(jwtExpiration / 1000)// maxAge est en SECONDES (jwtExpiration est en ms)
+            .build();
+        }
+
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
 
     public AuthController(LoginUseCase loginUseCase, RegisterUseCase registerUseCase) {
         this.loginUseCase = loginUseCase;
@@ -35,13 +52,24 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Connexion", description = "Retourne un JWT token si les identifiants sont valides")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto request) {
+    @Operation(summary = "Connexion", description = "Retourne un JWT (mobile) ou pose un cookie (web)")
+    public ResponseEntity<?> login(
+        @RequestBody LoginRequestDto request, 
+        @RequestHeader(value = "X-Client-Type", defaultValue = "mobile") String clientType,
+        HttpServletResponse response
+    ) {
         LoginUseCase.LoginResult result = loginUseCase.execute(
-                new LoginUseCase.LoginCommand(request.email(), request.password())
-        );
-        return ResponseEntity.ok(new AuthResponseDto(result.token(), result.email(), result.role(), result.prenom(), result.nom()));
-    }
+                new LoginUseCase.LoginCommand(request.email(), request.password()));
+        if (clientType.equals("web")) {
+        // WEB : le token part en cookie httpOnly, le body ne contient PAS le token
+                ResponseCookie cookie = buildAccessCookie(result.token());
+                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                return ResponseEntity.ok(new UserInfoDto(result.email(), result.role(), result.prenom(), result.nom()));
+        }
+        // MOBILE : comportement actuel, token dans le JSON
+        return ResponseEntity.ok(new AuthResponseDto(
+            result.token(), result.email(), result.role(), result.prenom(), result.nom()));
+}
     
     @PostMapping(value = "/register", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Creation de compte", description = "Cree un compte utilisateur")

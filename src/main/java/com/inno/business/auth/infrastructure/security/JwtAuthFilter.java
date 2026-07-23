@@ -15,6 +15,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter { // garanti que spring exÃ©cute ce filtre une seule fois par requete
@@ -32,15 +33,12 @@ public class JwtAuthFilter extends OncePerRequestFilter { // garanti que spring 
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain)
             throws ServletException, IOException {
-
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) { // bearer : standard pour les token jwt(porteur)
+        
+        final String token = extractToken(request);   // header (mobile) OU cookie (web)
+        if (token == null) {
             chain.doFilter(request, response);
             return;
         }
-
-        final String token = authHeader.substring(7);
         String email;
 
         try {
@@ -62,5 +60,23 @@ public class JwtAuthFilter extends OncePerRequestFilter { // garanti que spring 
         }
 
         chain.doFilter(request, response);
+    
+    }
+
+        private String extractToken(HttpServletRequest request) {
+        // 1. D'abord l'en-tête Authorization (mobile) — priorité
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        return authHeader.substring(7);
+        }
+        // 2. Sinon, chercher le cookie access_token (web)
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if (c.getName().equals("access_token")) {
+                    return c.getValue();
+                }
+            }
+        }
+        return null;   // ni header ni cookie → pas authentifié
     }
 }
