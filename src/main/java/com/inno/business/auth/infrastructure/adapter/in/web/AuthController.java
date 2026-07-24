@@ -182,4 +182,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", newAccess));
     }
 
+    @PostMapping("/logout")
+    @Operation(summary = "Déconnexion", description = "Efface les cookies d'authentification (web)")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        // cookies VIDES avec maxAge=0 → le navigateur les supprime
+        ResponseCookie clearAccess = ResponseCookie.from("access_token", "")
+                .httpOnly(true).secure(false).sameSite("Strict")
+                .path("/").maxAge(0).build();
+
+        ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true).secure(false).sameSite("Strict")
+                .path("/api/auth/refresh").maxAge(0).build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+        return ResponseEntity.noContent().build();   // 204
+    }
 }
