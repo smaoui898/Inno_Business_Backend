@@ -5,4 +5,5 @@ import com.inno.business.auth.domain.model.User;
 public interface TokenGeneratorPort {
 
     String generate(User user);
+    String generateRefresh(User user);
 }

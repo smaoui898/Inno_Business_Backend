@@ -23,15 +23,16 @@ public class LoginUseCaseImpl implements LoginUseCase {
     public LoginResult execute(LoginCommand command) {
         // 1. Chercher l'utilisateur 
         User user = userRepository.findByEmail(command.email()).orElseThrow(InvalidCredentialsException::new);
-
+    
         // 2. VÃ©rifier le mot de passe
         if (!passwordVerifier.matches(command.password(), user.getPassword())) {
             throw new InvalidCredentialsException();
         }
         //3.Ge©ne©ration du token
         String token = tokenGenerator.generate(user);
-
-        return new LoginResult(token, user.getEmailValue(), user.getRole(),user.getPrenom(),user.getNom()); //resultat
+        String refreshToken = tokenGenerator.generateRefresh(user);
+        
+        return new LoginResult(token, refreshToken, user.getEmailValue(), user.getRole(),user.getPrenom(),user.getNom()); //resultat
     }
 
 }

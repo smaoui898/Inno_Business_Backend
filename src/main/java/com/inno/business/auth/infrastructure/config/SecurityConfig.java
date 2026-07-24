@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/api/auth/login",  // public : not connected yet
                         "/api/auth/register",  //public
+                        "/api/auth/refresh",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs",
